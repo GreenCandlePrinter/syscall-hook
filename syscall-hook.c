@@ -10,6 +10,10 @@
 #include <linux/delay.h>
 #include <asm/paravirt.h>
 
+MODULE_LICENSE( "GPL" );
+MODULE_AUTHOR( "galleg_a" );
+MODULE_DESCRIPTION( "Syscall Hijacking" );
+
 unsigned long **sys_call_table;
 
 asmlinkage int ( *original_write ) ( unsigned int, const char __user *, size_t );
@@ -82,12 +86,6 @@ static void	exit_mod( void )
   //sys_call_table[ __NR_open ] = ( unsigned long * ) original_open;
   disallow_writing();
 }
-
-// filtrer en fonction du nom de process qui appelle !! (sudo par ex)
-
-MODULE_LICENSE( "GPL" );
-MODULE_AUTHOR( "galleg_a" );
-MODULE_DESCRIPTION( "Syscall Hijacking" );
 
 module_init( init_mod );
 module_exit( exit_mod );
